@@ -7,7 +7,7 @@ import (
 	"github.com/terraform-linters/tflint-plugin-sdk/helper"
 )
 
-func Test_AwsInstanceExampleType(t *testing.T) {
+func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 	tests := []struct {
 		Name     string
 		Content  string
@@ -15,25 +15,26 @@ func Test_AwsInstanceExampleType(t *testing.T) {
 	}{
 		{
 			Name: "issue found",
-			Content: `
-resource "aws_instance" "web" {
-    instance_type = "t2.micro"
+			Content: `resource "vault_generic_endpoint" "user" {
+  depends_on = [
+    random_password.svc_acc_pass
+  ]
 }`,
 			Expected: helper.Issues{
 				{
-					Rule:    NewAwsInstanceExampleTypeRule(),
-					Message: "instance type is t2.micro",
+					Rule:    NewTerraformListsTrailingCommaRule(),
+					Message: "Last item in lists should always end with a trailing comma",
 					Range: hcl.Range{
 						Filename: "resource.tf",
-						Start:    hcl.Pos{Line: 3, Column: 21},
-						End:      hcl.Pos{Line: 3, Column: 31},
+						Start:    hcl.Pos{Line: 2, Column: 16},
+						End:      hcl.Pos{Line: 4, Column: 4},
 					},
 				},
 			},
 		},
 	}
 
-	rule := NewAwsInstanceExampleTypeRule()
+	rule := NewTerraformListsTrailingCommaRule()
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
