@@ -19,7 +19,7 @@ plugin "template" {
   enabled = true
 
   version = "0.1.0"
-  source  = "github.com/terraform-linters/tflint-ruleset-template"
+  source  = "github.com/Gaardsholt/tflint-ruleset-trailing-comma"
 
   signing_key = <<-KEY
   -----BEGIN PGP PUBLIC KEY BLOCK-----
