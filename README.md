@@ -33,34 +33,31 @@ plugin "template" {
 
 ## Rules
 
-|Name|Description|Severity|Enabled|Link|
-| --- | --- | --- | --- | --- |
-|aws_instance_example_type|Example rule for accessing and evaluating top-level attributes|ERROR|✔||
-|aws_s3_bucket_example_lifecycle_rule|Example rule for accessing top-level/nested blocks and attributes under the blocks|ERROR|✔||
-|google_compute_ssl_policy|Example rule with a custom rule config|WARNING|✔||
-|terraform_backend_type|Example rule for accessing other than resources|ERROR|✔||
+| Name                           | Description                                            | Severity | Enabled | Link |
+| ------------------------------ | ------------------------------------------------------ | -------- | ------- | ---- |
+| terraform_lists_trailing_comma | Will check if last item in a list has a trailing comma | ERROR    | ✔       |      |
 
 ## Building the plugin
 
 Clone the repository locally and run the following command:
 
-```
-$ make
+```shell
+make
 ```
 
 You can easily install the built plugin with the following:
 
-```
-$ make install
+```shell
+make install
 ```
 
 You can run the built plugin like the following:
 
-```
-$ cat << EOS > .tflint.hcl
-plugin "template" {
+```shell
+cat << EOS > .tflint.hcl
+plugin "trailing-comma" {
   enabled = true
 }
 EOS
-$ tflint
+tflint
 ```
