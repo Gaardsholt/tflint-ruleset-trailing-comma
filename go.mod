@@ -3,7 +3,7 @@ module github.com/Gaardsholt/tflint-ruleset-trailing-comma
 go 1.23.0
 
 require (
-	github.com/hashicorp/hcl/v2 v2.22.0
+	github.com/hashicorp/hcl/v2 v2.23.0
 	github.com/terraform-linters/tflint-plugin-sdk v0.21.0
 )
 
