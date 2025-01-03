@@ -48,9 +48,10 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		file := files[filename]
 
 		list, ok := e.(*hclsyntax.TupleConsExpr)
-		if !ok {
+		if !ok || len(list.Exprs) <= 0 {
 			return nil
 		}
+
 		listRange := list.Range()
 		lastItem := list.Exprs[len(list.Exprs)-1]
 		lastItemRange := lastItem.Range()
