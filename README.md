@@ -1,21 +1,16 @@
-# TFLint Ruleset Template
-[![Build Status](https://github.com/terraform-linters/tflint-ruleset-template/workflows/build/badge.svg?branch=main)](https://github.com/terraform-linters/tflint-ruleset-template/actions)
-
-This is a template repository for building a custom ruleset. You can create a plugin repository from "Use this template". See also [Writing Plugins](https://github.com/terraform-linters/tflint/blob/master/docs/developer-guide/plugins.md).
+# TFLint Ruleset trailing-comma
 
 ## Requirements
 
 - TFLint v0.42+
-- Go v1.22
+- Go v1.22 or newer
 
 ## Installation
-
-TODO: This template repository does not contain release binaries, so this installation will not work. Please rewrite for your repository. See the "Building the plugin" section to get this template ruleset working.
 
 You can install the plugin with `tflint --init`. Declare a config in `.tflint.hcl` as follows:
 
 ```hcl
-plugin "template" {
+plugin "trailing-comma" {
   enabled = true
 
   version = "0.1.0"
