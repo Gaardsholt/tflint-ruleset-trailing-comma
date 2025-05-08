@@ -10,7 +10,7 @@ func main() {
 	plugin.Serve(&plugin.ServeOpts{
 		RuleSet: &tflint.BuiltinRuleSet{
 			Name:    "trailing-comma",
-			Version: "0.1.0",
+			Version: "0.1.2",
 			Rules: []tflint.Rule{
 				rules.NewTerraformListsTrailingCommaRule(),
 			},
