@@ -28,7 +28,7 @@ func (r *TerraformListsTrailingCommaRule) Enabled() bool {
 
 // Severity returns the rule severity
 func (r *TerraformListsTrailingCommaRule) Severity() tflint.Severity {
-	return tflint.ERROR
+	return tflint.WARNING
 }
 
 // Link returns the rule reference link
