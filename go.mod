@@ -1,6 +1,6 @@
 module github.com/Gaardsholt/tflint-ruleset-trailing-comma
 
-go 1.24.0
+go 1.25.1
 
 require (
 	github.com/hashicorp/hcl/v2 v2.24.0
