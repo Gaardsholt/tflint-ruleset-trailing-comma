@@ -32,6 +32,41 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name: "heredoc without trailing comma",
+			Content: `resource "terraform_data" "test" {
+  input = [
+    "test",
+    <<-HERE
+      Lorem ipsum
+    HERE
+  ]
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformListsTrailingCommaRule(),
+					Message: "Last item in lists should always end with a trailing comma",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 2, Column: 11},
+						End:      hcl.Pos{Line: 7, Column: 4},
+					},
+				},
+			},
+		},
+		{
+			Name: "heredoc with trailing comma",
+			Content: `resource "terraform_data" "test" {
+  input = [
+    "test",
+    <<-HERE
+      Lorem ipsum
+    HERE
+    ,
+  ]
+}`,
+			Expected: helper.Issues{},
+		},
 	}
 
 	rule := NewTerraformListsTrailingCommaRule()
