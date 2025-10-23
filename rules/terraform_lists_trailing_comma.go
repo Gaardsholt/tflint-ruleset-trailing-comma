@@ -60,13 +60,39 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 			return nil
 		}
 
-		if lastItemRange.End.Byte < len(file.Bytes) && file.Bytes[lastItemRange.End.Byte] != ',' {
+		// Check if there's already a trailing comma after the last item
+		// We need to skip whitespace and newlines to handle heredoc cases
+		hasTrailingComma := false
+		commaPos := lastItemRange.End.Byte
+
+		// Skip whitespace and newlines after the last item to look for a comma
+		for commaPos < len(file.Bytes) && (file.Bytes[commaPos] == ' ' || file.Bytes[commaPos] == '\t' || file.Bytes[commaPos] == '\n' || file.Bytes[commaPos] == '\r') {
+			commaPos++
+		}
+
+		if commaPos < len(file.Bytes) && file.Bytes[commaPos] == ',' {
+			hasTrailingComma = true
+		}
+
+		if !hasTrailingComma {
+			// Find the position after any whitespace to insert the comma
+			insertPos := lastItemRange.End.Byte
+			for insertPos < len(file.Bytes) && (file.Bytes[insertPos] == ' ' || file.Bytes[insertPos] == '\t') {
+				insertPos++
+			}
+
+			// Check if we're at a newline - if so, insert before it
+			insertText := ","
+			if insertPos < len(file.Bytes) && (file.Bytes[insertPos] == '\n' || file.Bytes[insertPos] == '\r') {
+				insertText = ","
+			}
+
 			if err := runner.EmitIssueWithFix(
 				r,
 				"Last item in lists should always end with a trailing comma",
 				listRange,
 				func(f tflint.Fixer) error {
-					return f.InsertTextAfter(lastItemRange, ",")
+					return f.InsertTextAfter(lastItemRange, insertText)
 				},
 			); err != nil {
 				return hcl.Diagnostics{
