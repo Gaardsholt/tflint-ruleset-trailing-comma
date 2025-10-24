@@ -62,7 +62,6 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 
 		// Check if there's already a trailing comma after the last item
 		// We need to skip whitespace and newlines to handle heredoc cases
-		hasTrailingComma := false
 		commaPos := lastItemRange.End.Byte
 
 		// Skip whitespace and newlines after the last item to look for a comma
@@ -71,10 +70,7 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		}
 
 		if commaPos < len(file.Bytes) && file.Bytes[commaPos] == ',' {
-			hasTrailingComma = true
-		}
-
-		if hasTrailingComma {
+			// It already has a trailling comma
 			return nil
 		}
 
