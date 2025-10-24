@@ -78,23 +78,18 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 			return nil
 		}
 
+		insertText := ","
 		// Check if the last item is a heredoc.
 		// A heredoc is a TemplateExpr with a single LiteralValueExpr part.
-		isHeredoc := false
 		if template, ok := lastItem.(*hclsyntax.TemplateExpr); ok {
 			if len(template.Parts) == 1 {
 				if _, isLiteral := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLiteral {
 					// This is a strong indicator of a heredoc, especially if it spans multiple lines.
 					if template.Range().Start.Line != template.Range().End.Line {
-						isHeredoc = true
+						insertText = "\n,"
 					}
 				}
 			}
-		}
-
-		insertText := ","
-		if isHeredoc {
-			insertText = "\n,"
 		}
 
 		if err := runner.EmitIssueWithFix(
