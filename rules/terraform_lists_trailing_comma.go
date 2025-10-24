@@ -60,22 +60,48 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 			return nil
 		}
 
-		if lastItemRange.End.Byte < len(file.Bytes) && file.Bytes[lastItemRange.End.Byte] != ',' {
-			if err := runner.EmitIssueWithFix(
-				r,
-				"Last item in lists should always end with a trailing comma",
-				listRange,
-				func(f tflint.Fixer) error {
-					return f.InsertTextAfter(lastItemRange, ",")
-				},
-			); err != nil {
-				return hcl.Diagnostics{
-					{
-						Severity: hcl.DiagError,
-						Summary:  "failed to call EmitIssueWithFix()",
-						Detail:   err.Error(),
-					},
+		// Check if there's already a trailing comma after the last item
+		// We need to skip whitespace and newlines to handle heredoc cases
+		commaPos := lastItemRange.End.Byte
+
+		// Skip whitespace and newlines after the last item to look for a comma
+		for commaPos < len(file.Bytes) && (file.Bytes[commaPos] == ' ' || file.Bytes[commaPos] == '\t' || file.Bytes[commaPos] == '\n' || file.Bytes[commaPos] == '\r') {
+			commaPos++
+		}
+
+		if commaPos < len(file.Bytes) && file.Bytes[commaPos] == ',' {
+			// It already has a trailling comma
+			return nil
+		}
+
+		insertText := ","
+		// Check if the last item is a heredoc.
+		// A heredoc is a TemplateExpr with a single LiteralValueExpr part.
+		if template, ok := lastItem.(*hclsyntax.TemplateExpr); ok {
+			if len(template.Parts) == 1 {
+				if _, isLiteral := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLiteral {
+					// This is a strong indicator of a heredoc, especially if it spans multiple lines.
+					if template.Range().Start.Line != template.Range().End.Line {
+						insertText = "\n,"
+					}
 				}
+			}
+		}
+
+		if err := runner.EmitIssueWithFix(
+			r,
+			"Last item in lists should always end with a trailing comma",
+			listRange,
+			func(f tflint.Fixer) error {
+				return f.InsertTextAfter(lastItemRange, insertText)
+			},
+		); err != nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "failed to call EmitIssueWithFix()",
+					Detail:   err.Error(),
+				},
 			}
 		}
 
