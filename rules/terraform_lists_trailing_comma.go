@@ -74,34 +74,43 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 			hasTrailingComma = true
 		}
 
-		if !hasTrailingComma {
-			// Find the position after any whitespace to insert the comma
-			insertPos := lastItemRange.End.Byte
-			for insertPos < len(file.Bytes) && (file.Bytes[insertPos] == ' ' || file.Bytes[insertPos] == '\t') {
-				insertPos++
-			}
+		if hasTrailingComma {
+			return nil
+		}
 
-			// Check if we're at a newline - if so, insert before it
-			insertText := ","
-			if insertPos < len(file.Bytes) && (file.Bytes[insertPos] == '\n' || file.Bytes[insertPos] == '\r') {
-				insertText = ","
-			}
-
-			if err := runner.EmitIssueWithFix(
-				r,
-				"Last item in lists should always end with a trailing comma",
-				listRange,
-				func(f tflint.Fixer) error {
-					return f.InsertTextAfter(lastItemRange, insertText)
-				},
-			); err != nil {
-				return hcl.Diagnostics{
-					{
-						Severity: hcl.DiagError,
-						Summary:  "failed to call EmitIssueWithFix()",
-						Detail:   err.Error(),
-					},
+		// Check if the last item is a heredoc.
+		// A heredoc is a TemplateExpr with a single LiteralValueExpr part.
+		isHeredoc := false
+		if template, ok := lastItem.(*hclsyntax.TemplateExpr); ok {
+			if len(template.Parts) == 1 {
+				if _, isLiteral := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLiteral {
+					// This is a strong indicator of a heredoc, especially if it spans multiple lines.
+					if template.Range().Start.Line != template.Range().End.Line {
+						isHeredoc = true
+					}
 				}
+			}
+		}
+
+		insertText := ","
+		if isHeredoc {
+			insertText = "\n,"
+		}
+
+		if err := runner.EmitIssueWithFix(
+			r,
+			"Last item in lists should always end with a trailing comma",
+			listRange,
+			func(f tflint.Fixer) error {
+				return f.InsertTextAfter(lastItemRange, insertText)
+			},
+		); err != nil {
+			return hcl.Diagnostics{
+				{
+					Severity: hcl.DiagError,
+					Summary:  "failed to call EmitIssueWithFix()",
+					Detail:   err.Error(),
+				},
 			}
 		}
 
