@@ -53,22 +53,22 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		containerRange := e.Range()
 
 		var lastItem hcl.Expression
+		var exprs []hclsyntax.Expression
 
 		switch node := e.(type) {
 		case *hclsyntax.TupleConsExpr:
-			if len(node.Exprs) <= 0 {
-				return nil
-			}
-			lastItem = node.Exprs[len(node.Exprs)-1]
+			exprs = node.Exprs
 		case *hclsyntax.FunctionCallExpr:
-			if len(node.Args) <= 0 {
-				return nil
-			}
-			lastItem = node.Args[len(node.Args)-1]
+			exprs = node.Args
 		default:
 			return nil
 		}
 
+		if len(exprs) <= 0 {
+			return nil
+		}
+
+		lastItem = exprs[len(exprs)-1]
 		lastItemRange := lastItem.Range()
 
 		if containerRange.Start.Line == lastItemRange.Start.Line {
