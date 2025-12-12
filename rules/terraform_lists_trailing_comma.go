@@ -47,16 +47,29 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		filename := e.Range().Filename
 		file := files[filename]
 
-		list, ok := e.(*hclsyntax.TupleConsExpr)
-		if !ok || len(list.Exprs) <= 0 {
+		var containerRange hcl.Range
+		var lastItem hcl.Expression
+
+		switch node := e.(type) {
+		case *hclsyntax.TupleConsExpr:
+			if len(node.Exprs) <= 0 {
+				return nil
+			}
+			containerRange = node.Range()
+			lastItem = node.Exprs[len(node.Exprs)-1]
+		case *hclsyntax.FunctionCallExpr:
+			if len(node.Args) <= 0 {
+				return nil
+			}
+			containerRange = node.Range()
+			lastItem = node.Args[len(node.Args)-1]
+		default:
 			return nil
 		}
 
-		listRange := list.Range()
-		lastItem := list.Exprs[len(list.Exprs)-1]
 		lastItemRange := lastItem.Range()
 
-		if listRange.Start.Line == lastItemRange.Start.Line {
+		if containerRange.Start.Line == lastItemRange.Start.Line {
 			return nil
 		}
 
@@ -91,7 +104,7 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		if err := runner.EmitIssueWithFix(
 			r,
 			"Last item in lists should always end with a trailing comma",
-			listRange,
+			containerRange,
 			func(f tflint.Fixer) error {
 				return f.InsertTextAfter(lastItemRange, insertText)
 			},
