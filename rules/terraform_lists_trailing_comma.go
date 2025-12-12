@@ -6,6 +6,10 @@ import (
 	"github.com/terraform-linters/tflint-plugin-sdk/tflint"
 )
 
+const (
+	IssueMessage = "Last item in a multi-line list or function call should have a trailing comma"
+)
+
 // TerraformListsTrailingCommaRule checks whether ...
 type TerraformListsTrailingCommaRule struct {
 	tflint.DefaultRule
@@ -46,8 +50,8 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
 		filename := e.Range().Filename
 		file := files[filename]
+		containerRange := e.Range()
 
-		var containerRange hcl.Range
 		var lastItem hcl.Expression
 
 		switch node := e.(type) {
@@ -55,13 +59,11 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 			if len(node.Exprs) <= 0 {
 				return nil
 			}
-			containerRange = node.Range()
 			lastItem = node.Exprs[len(node.Exprs)-1]
 		case *hclsyntax.FunctionCallExpr:
 			if len(node.Args) <= 0 {
 				return nil
 			}
-			containerRange = node.Range()
 			lastItem = node.Args[len(node.Args)-1]
 		default:
 			return nil
@@ -103,7 +105,7 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 
 		if err := runner.EmitIssueWithFix(
 			r,
-			"Last item in lists should always end with a trailing comma",
+			IssueMessage,
 			containerRange,
 			func(f tflint.Fixer) error {
 				return f.InsertTextAfter(lastItemRange, insertText)

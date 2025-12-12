@@ -23,7 +23,7 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformListsTrailingCommaRule(),
-					Message: "Last item in lists should always end with a trailing comma",
+					Message: IssueMessage,
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 16},
@@ -45,7 +45,7 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformListsTrailingCommaRule(),
-					Message: "Last item in lists should always end with a trailing comma",
+					Message: IssueMessage,
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 11},
@@ -79,7 +79,7 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformListsTrailingCommaRule(),
-					Message: "Last item in lists should always end with a trailing comma",
+					Message: IssueMessage,
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 10},
@@ -119,7 +119,7 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 			Expected: helper.Issues{
 				{
 					Rule:    NewTerraformListsTrailingCommaRule(),
-					Message: "Last item in lists should always end with a trailing comma",
+					Message: IssueMessage,
 					Range: hcl.Range{
 						Filename: "resource.tf",
 						Start:    hcl.Pos{Line: 2, Column: 10},
