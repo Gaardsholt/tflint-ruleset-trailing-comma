@@ -67,6 +67,67 @@ func Test_TerraformListsTrailingCommaRule(t *testing.T) {
 }`,
 			Expected: helper.Issues{},
 		},
+		{
+			Name: "function call issue found",
+			Content: `locals {
+  test = merge(
+    local.a,
+    local.b,
+    local.c
+  )
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformListsTrailingCommaRule(),
+					Message: "Last item in function calls should always end with a trailing comma",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 2, Column: 10},
+						End:      hcl.Pos{Line: 6, Column: 4},
+					},
+				},
+			},
+		},
+		{
+			Name: "function call no issue with trailing comma",
+			Content: `locals {
+  test = merge(
+    local.a,
+    local.b,
+    local.c,
+  )
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "function call no issue single line",
+			Content: `locals {
+  test = merge(local.a, local.b, local.c)
+}`,
+			Expected: helper.Issues{},
+		},
+		{
+			Name: "function call heredoc without trailing comma",
+			Content: `locals {
+  test = merge(
+    local.a,
+    <<-HERE
+      Lorem ipsum
+    HERE
+  )
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformListsTrailingCommaRule(),
+					Message: "Last item in function calls should always end with a trailing comma",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 2, Column: 10},
+						End:      hcl.Pos{Line: 7, Column: 4},
+					},
+				},
+			},
+		},
 	}
 
 	rule := NewTerraformListsTrailingCommaRule()
