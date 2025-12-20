@@ -66,7 +66,8 @@ plugin "trailing-comma" {
 
 | Name                           | Description                                            | Severity | Enabled | Link |
 | ------------------------------ | ------------------------------------------------------ | -------- | ------- | ---- |
-| terraform_lists_trailing_comma | Will check if last item in a list has a trailing comma | ERROR    | ✔       |      |
+| terraform_lists_trailing_comma | Will check if last item in a list has a trailing comma | WARNING  | ✔       |      |
+| terraform_map_trailing_comma   | Checks whether maps have consistent trailing commas    | WARNING  |         |      |
 
 ## Building the plugin
 

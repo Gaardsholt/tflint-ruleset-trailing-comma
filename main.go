@@ -13,6 +13,7 @@ func main() {
 			Version: "0.2.0",
 			Rules: []tflint.Rule{
 				rules.NewTerraformListsTrailingCommaRule(),
+				rules.NewTerraformMapTrailingCommaRule(),
 			},
 		},
 	})
