@@ -126,11 +126,38 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 		} else {
 			for _, i := range itemsWithComma {
 				item := expr.Items[i]
-				runner.EmitIssue(
-					r,
-					message,
-					item.ValueExpr.Range(),
-				)
+				startPos := item.ValueExpr.Range().End
+				curr := startPos.Byte
+
+				for curr < len(file.Bytes) && (file.Bytes[curr] == ' ' || file.Bytes[curr] == '\t' || file.Bytes[curr] == '\n' || file.Bytes[curr] == '\r') {
+					if file.Bytes[curr] == '\n' {
+						startPos.Line++
+						startPos.Column = 1
+					} else {
+						startPos.Column++
+					}
+					startPos.Byte++
+					curr++
+				}
+
+				if curr < len(file.Bytes) && file.Bytes[curr] == ',' {
+					endPos := startPos
+					endPos.Column++
+					endPos.Byte++
+
+					runner.EmitIssueWithFix(
+						r,
+						message,
+						item.ValueExpr.Range(),
+						func(f tflint.Fixer) error {
+							return f.Remove(hcl.Range{
+								Filename: filename,
+								Start:    startPos,
+								End:      endPos,
+							})
+						},
+					)
+				}
 			}
 		}
 
