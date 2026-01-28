@@ -74,7 +74,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 			valRange := item.ValueExpr.Range()
 			commaPos := valRange.End.Byte
 
-			for commaPos < len(file.Bytes) && (file.Bytes[commaPos] == ' ' || file.Bytes[commaPos] == '\t' || file.Bytes[commaPos] == '\n' || file.Bytes[commaPos] == '\r') {
+			for commaPos < len(file.Bytes) && isWhitespace(file.Bytes[commaPos]) {
 				commaPos++
 			}
 
@@ -129,7 +129,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 				startPos := item.ValueExpr.Range().End
 				curr := startPos.Byte
 
-				for curr < len(file.Bytes) && (file.Bytes[curr] == ' ' || file.Bytes[curr] == '\t' || file.Bytes[curr] == '\n' || file.Bytes[curr] == '\r') {
+				for curr < len(file.Bytes) && isWhitespace(file.Bytes[curr]) {
 					if file.Bytes[curr] == '\n' {
 						startPos.Line++
 						startPos.Column = 1

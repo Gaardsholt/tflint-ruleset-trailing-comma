@@ -65,7 +65,7 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		commaPos := lastItemRange.End.Byte
 
 		// Skip whitespace and newlines after the last item to look for a comma
-		for commaPos < len(file.Bytes) && (file.Bytes[commaPos] == ' ' || file.Bytes[commaPos] == '\t' || file.Bytes[commaPos] == '\n' || file.Bytes[commaPos] == '\r') {
+		for commaPos < len(file.Bytes) && isWhitespace(file.Bytes[commaPos]) {
 			commaPos++
 		}
 
