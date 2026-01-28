@@ -66,6 +66,27 @@ func Test_TerraformMapTrailingCommaRule(t *testing.T) {
 			},
 		},
 		{
+			Name: "match: majority really no comma",
+			Content: `locals {
+  a_dictionary = {
+    "one"  = "fish",
+    "two"  = "fish"
+    "red"  = "fish"
+  }
+}`,
+			Expected: helper.Issues{
+				{
+					Rule:    NewTerraformMapTrailingCommaRule(),
+					Message: "match: majority no comma",
+					Range: hcl.Range{
+						Filename: "resource.tf",
+						Start:    hcl.Pos{Line: 3, Column: 14},
+						End:      hcl.Pos{Line: 3, Column: 20},
+					},
+				},
+			},
+		},
+		{
 			Name:     "single line map",
 			Content:  `b_dictionary = { "one" = "fish", "two" = "fish", "red" = "fish", "blue" = "fish" }`,
 			Expected: helper.Issues{},
