@@ -56,6 +56,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
 		filename := e.Range().Filename
 		file := files[filename]
+		fileLength := len(file.Bytes)
 
 		expr, ok := e.(*hclsyntax.ObjectConsExpr)
 		if !ok || len(expr.Items) == 0 {
@@ -74,11 +75,11 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 			valRange := item.ValueExpr.Range()
 			commaPos := valRange.End.Byte
 
-			for commaPos < len(file.Bytes) && isWhitespace(file.Bytes[commaPos]) {
+			for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
 				commaPos++
 			}
 
-			if commaPos < len(file.Bytes) && file.Bytes[commaPos] == ',' {
+			if commaPos < fileLength && file.Bytes[commaPos] == ',' {
 				itemsWithComma = append(itemsWithComma, i)
 			} else {
 				itemsWithoutComma = append(itemsWithoutComma, i)
@@ -129,7 +130,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 				startPos := item.ValueExpr.Range().End
 				curr := startPos.Byte
 
-				for curr < len(file.Bytes) && isWhitespace(file.Bytes[curr]) {
+				for curr < fileLength && isWhitespace(file.Bytes[curr]) {
 					if file.Bytes[curr] == '\n' {
 						startPos.Line++
 						startPos.Column = 1
@@ -140,7 +141,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 					curr++
 				}
 
-				if curr < len(file.Bytes) && file.Bytes[curr] == ',' {
+				if curr < fileLength && file.Bytes[curr] == ',' {
 					endPos := startPos
 					endPos.Column++
 					endPos.Byte++

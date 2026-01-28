@@ -46,6 +46,7 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
 		filename := e.Range().Filename
 		file := files[filename]
+		fileLength := len(file.Bytes)
 
 		list, ok := e.(*hclsyntax.TupleConsExpr)
 		if !ok || len(list.Exprs) <= 0 {
@@ -65,11 +66,11 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 		commaPos := lastItemRange.End.Byte
 
 		// Skip whitespace and newlines after the last item to look for a comma
-		for commaPos < len(file.Bytes) && isWhitespace(file.Bytes[commaPos]) {
+		for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
 			commaPos++
 		}
 
-		if commaPos < len(file.Bytes) && file.Bytes[commaPos] == ',' {
+		if commaPos < fileLength && file.Bytes[commaPos] == ',' {
 			// It already has a trailling comma
 			return nil
 		}
