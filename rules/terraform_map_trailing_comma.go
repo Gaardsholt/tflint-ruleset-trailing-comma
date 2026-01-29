@@ -115,14 +115,22 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 		if wantComma {
 			for _, i := range itemsWithoutComma {
 				item := expr.Items[i]
-				runner.EmitIssueWithFix(
+				if err := runner.EmitIssueWithFix(
 					r,
 					message,
 					item.ValueExpr.Range(),
 					func(f tflint.Fixer) error {
 						return f.InsertTextAfter(item.ValueExpr.Range(), ",")
 					},
-				)
+				); err != nil {
+					return hcl.Diagnostics{
+						{
+							Severity: hcl.DiagError,
+							Summary:  "failed to call EmitIssueWithFix()",
+							Detail:   err.Error(),
+						},
+					}
+				}
 			}
 		} else {
 			for _, i := range itemsWithComma {
@@ -146,7 +154,7 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 					endPos.Column++
 					endPos.Byte++
 
-					runner.EmitIssueWithFix(
+					if err := runner.EmitIssueWithFix(
 						r,
 						message,
 						item.ValueExpr.Range(),
@@ -157,7 +165,15 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 								End:      endPos,
 							})
 						},
-					)
+					); err != nil {
+						return hcl.Diagnostics{
+							{
+								Severity: hcl.DiagError,
+								Summary:  "failed to call EmitIssueWithFix()",
+								Detail:   err.Error(),
+							},
+						}
+					}
 				}
 			}
 		}
