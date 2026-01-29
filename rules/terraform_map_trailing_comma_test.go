@@ -87,6 +87,16 @@ func Test_TerraformMapTrailingCommaRule(t *testing.T) {
 			},
 		},
 		{
+			Name: "bug: do not remove separator comma on same line",
+			Content: `locals {
+  a_dictionary = {
+    "one" = "fish", "two" = "fish"
+    "red" = "fish"
+  }
+}`,
+			Expected: helper.Issues{},
+		},
+		{
 			Name:     "single line map",
 			Content:  `b_dictionary = { "one" = "fish", "two" = "fish", "red" = "fish", "blue" = "fish" }`,
 			Expected: helper.Issues{},
