@@ -134,6 +134,15 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 			}
 		} else {
 			for _, i := range itemsWithComma {
+				// If the next item is on the same line, the comma is a separator and cannot be removed
+				if i+1 < len(expr.Items) {
+					currentEndLine := expr.Items[i].ValueExpr.Range().End.Line
+					nextStartLine := expr.Items[i+1].KeyExpr.Range().Start.Line
+					if currentEndLine == nextStartLine {
+						continue
+					}
+				}
+
 				item := expr.Items[i]
 				startPos := item.ValueExpr.Range().End
 				curr := startPos.Byte
