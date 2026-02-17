@@ -45,11 +45,24 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
 		filename := e.Range().Filename
+
+		if !isFileInCurrentModule(filename) {
+			return nil
+		}
+
+		if _, ok := files[filename]; !ok {
+			return nil
+		}
+
 		file := files[filename]
 		fileLength := len(file.Bytes)
 
+		if fileLength == 0 {
+			return nil
+		}
+
 		list, ok := e.(*hclsyntax.TupleConsExpr)
-		if !ok || len(list.Exprs) <= 0 {
+		if !ok || len(list.Exprs) == 0 {
 			return nil
 		}
 
