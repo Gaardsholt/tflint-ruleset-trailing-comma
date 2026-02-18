@@ -86,4 +86,11 @@ func TestIsFileInCurrentModule(t *testing.T) {
 	if isFileInCurrentModule("../../main.tf") {
 		t.Errorf("Submodule: ../../main.tf should NOT be in current module")
 	}
+
+	// 2c. Filename whose directory name matches the suffix of cwd should NOT
+	// be treated as in the current module if it actually refers to a different path.
+	// This specifically guards against implementations that use HasSuffix on cwd.
+	if isFileInCurrentModule("child/main.tf") {
+		t.Errorf("Submodule: child/main.tf should NOT be in current module")
+	}
 }

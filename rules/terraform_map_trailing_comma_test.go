@@ -11,6 +11,7 @@ func Test_TerraformMapTrailingCommaRule(t *testing.T) {
 	tests := []struct {
 		Name     string
 		Content  string
+		Files    map[string]string
 		Expected helper.Issues
 	}{
 		{
@@ -101,13 +102,34 @@ func Test_TerraformMapTrailingCommaRule(t *testing.T) {
 			Content:  `b_dictionary = { "one" = "fish", "two" = "fish", "red" = "fish", "blue" = "fish" }`,
 			Expected: helper.Issues{},
 		},
+		{
+			Name: "submodule file ignored",
+			Content: `
+		module "child" {
+		  source = "./modules/child"
+		}
+		`,
+			Files: map[string]string{
+				"modules/child/main.tf": `locals { a_dict = { "one" = "fish", "two" = "fish" } }`,
+			},
+			Expected: helper.Issues{},
+		},
 	}
 
 	rule := NewTerraformMapTrailingCommaRule()
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			runner := helper.TestRunner(t, map[string]string{"resource.tf": test.Content})
+			files := test.Files
+			if files == nil {
+				files = map[string]string{"resource.tf": test.Content}
+			} else {
+				if test.Content != "" {
+					files["resource.tf"] = test.Content
+				}
+			}
+
+			runner := helper.TestRunner(t, files)
 
 			if err := rule.Check(runner); err != nil {
 				t.Fatalf("Unexpected error occurred: %s", err)

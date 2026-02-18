@@ -3,7 +3,6 @@ package rules
 import (
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func isWhitespace(b byte) bool {
@@ -22,5 +21,14 @@ func isFileInCurrentModule(filename string) bool {
 		return true
 	}
 
-	return strings.HasSuffix(cwd, dir)
+	// Convert both paths to absolute paths for proper comparison
+	absFilePath := filepath.Join(cwd, filename)
+	absFileDir := filepath.Dir(absFilePath)
+
+	// Clean both paths to normalize them
+	cleanCwd := filepath.Clean(cwd)
+	cleanFileDir := filepath.Clean(absFileDir)
+
+	// The file is in the current module if its directory matches or is the current working directory
+	return cleanFileDir == cleanCwd
 }
