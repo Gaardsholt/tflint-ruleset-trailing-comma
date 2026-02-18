@@ -40,7 +40,7 @@ func TestIsFileInCurrentModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmpDir) //nolint:errcheck // We don't care about this errors in our test
+	defer os.RemoveAll(tmpDir) //nolint:errcheck // We don't care about this error in our test
 
 	modulesDir := filepath.Join(tmpDir, "modules", "child")
 	if err := os.MkdirAll(modulesDir, 0755); err != nil {
@@ -51,7 +51,7 @@ func TestIsFileInCurrentModule(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Chdir(originalWd) //nolint:errcheck // We don't care about this errors in our test
+	defer os.Chdir(originalWd) //nolint:errcheck // We don't care about this error in our test
 
 	// Test Case 1: Running in Root Module
 	if err := os.Chdir(tmpDir); err != nil {
