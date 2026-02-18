@@ -54,138 +54,73 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 	}
 
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
-		filename := e.Range().Filename
+		return checkExpression(e, files, func(file *hcl.File) hcl.Diagnostics {
+			fileLength := len(file.Bytes)
+			filename := e.Range().Filename
 
-		if !isFileInCurrentModule(filename) {
-			return nil
-		}
-
-		if _, ok := files[filename]; !ok {
-			return nil
-		}
-
-		file := files[filename]
-		fileLength := len(file.Bytes)
-
-		if fileLength == 0 {
-			return nil
-		}
-
-		expr, ok := e.(*hclsyntax.ObjectConsExpr)
-		if !ok || len(expr.Items) == 0 {
-			return nil
-		}
-
-		listRange := expr.Range()
-		if listRange.Start.Line == listRange.End.Line {
-			return nil
-		}
-
-		var itemsWithComma []int
-		var itemsWithoutComma []int
-
-		for i, item := range expr.Items {
-			valRange := item.ValueExpr.Range()
-			commaPos := valRange.End.Byte
-
-			for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
-				commaPos++
-			}
-
-			if commaPos < fileLength && file.Bytes[commaPos] == ',' {
-				itemsWithComma = append(itemsWithComma, i)
-			} else {
-				itemsWithoutComma = append(itemsWithoutComma, i)
-			}
-		}
-
-		var wantComma bool
-		var message string
-
-		switch config.Style {
-		case "all":
-			wantComma = true
-			message = "all: should have comma"
-		case "none":
-			wantComma = false
-			message = "none: should not have comma"
-		case "match":
-			if len(itemsWithComma) == 0 || len(itemsWithoutComma) == 0 {
+			expr, ok := e.(*hclsyntax.ObjectConsExpr)
+			if !ok || len(expr.Items) == 0 {
 				return nil
 			}
 
-			if len(itemsWithComma) >= len(itemsWithoutComma) {
+			listRange := expr.Range()
+			if listRange.Start.Line == listRange.End.Line {
+				return nil
+			}
+
+			var itemsWithComma []int
+			var itemsWithoutComma []int
+
+			for i, item := range expr.Items {
+				valRange := item.ValueExpr.Range()
+				commaPos := valRange.End.Byte
+
+				for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
+					commaPos++
+				}
+
+				if commaPos < fileLength && file.Bytes[commaPos] == ',' {
+					itemsWithComma = append(itemsWithComma, i)
+				} else {
+					itemsWithoutComma = append(itemsWithoutComma, i)
+				}
+			}
+
+			var wantComma bool
+			var message string
+
+			switch config.Style {
+			case "all":
 				wantComma = true
-				message = "match: majority have comma"
-			} else {
+				message = "all: should have comma"
+			case "none":
 				wantComma = false
-				message = "match: majority no comma"
+				message = "none: should not have comma"
+			case "match":
+				if len(itemsWithComma) == 0 || len(itemsWithoutComma) == 0 {
+					return nil
+				}
+
+				if len(itemsWithComma) >= len(itemsWithoutComma) {
+					wantComma = true
+					message = "match: majority have comma"
+				} else {
+					wantComma = false
+					message = "match: majority no comma"
+				}
+			default:
+				return nil
 			}
-		default:
-			return nil
-		}
 
-		if wantComma {
-			for _, i := range itemsWithoutComma {
-				item := expr.Items[i]
-				if err := runner.EmitIssueWithFix(
-					r,
-					message,
-					item.ValueExpr.Range(),
-					func(f tflint.Fixer) error {
-						return f.InsertTextAfter(item.ValueExpr.Range(), ",")
-					},
-				); err != nil {
-					return hcl.Diagnostics{
-						{
-							Severity: hcl.DiagError,
-							Summary:  "failed to call EmitIssueWithFix()",
-							Detail:   err.Error(),
-						},
-					}
-				}
-			}
-		} else {
-			for _, i := range itemsWithComma {
-				// If the next item is on the same line, the comma is a separator and cannot be removed
-				if i+1 < len(expr.Items) {
-					currentEndLine := expr.Items[i].ValueExpr.Range().End.Line
-					nextStartLine := expr.Items[i+1].KeyExpr.Range().Start.Line
-					if currentEndLine == nextStartLine {
-						continue
-					}
-				}
-
-				item := expr.Items[i]
-				startPos := item.ValueExpr.Range().End
-				curr := startPos.Byte
-
-				for curr < fileLength && isWhitespace(file.Bytes[curr]) {
-					if file.Bytes[curr] == '\n' {
-						startPos.Line++
-						startPos.Column = 1
-					} else {
-						startPos.Column++
-					}
-					startPos.Byte++
-					curr++
-				}
-
-				if curr < fileLength && file.Bytes[curr] == ',' {
-					endPos := startPos
-					endPos.Column++
-					endPos.Byte++
-
+			if wantComma {
+				for _, i := range itemsWithoutComma {
+					item := expr.Items[i]
 					if err := runner.EmitIssueWithFix(
 						r,
 						message,
 						item.ValueExpr.Range(),
 						func(f tflint.Fixer) error {
-							return f.Remove(hcl.Range{
-								Filename: filename,
-								Start:    startPos,
-								End:      endPos,
-							})
+							return f.InsertTextAfter(item.ValueExpr.Range(), ",")
 						},
 					); err != nil {
 						return hcl.Diagnostics{
@@ -197,10 +132,63 @@ func (r *TerraformMapTrailingCommaRule) Check(runner tflint.Runner) error {
 						}
 					}
 				}
-			}
-		}
+			} else {
+				for _, i := range itemsWithComma {
+					// If the next item is on the same line, the comma is a separator and cannot be removed
+					if i+1 < len(expr.Items) {
+						currentEndLine := expr.Items[i].ValueExpr.Range().End.Line
+						nextStartLine := expr.Items[i+1].KeyExpr.Range().Start.Line
+						if currentEndLine == nextStartLine {
+							continue
+						}
+					}
 
-		return nil
+					item := expr.Items[i]
+					startPos := item.ValueExpr.Range().End
+					curr := startPos.Byte
+
+					for curr < fileLength && isWhitespace(file.Bytes[curr]) {
+						if file.Bytes[curr] == '\n' {
+							startPos.Line++
+							startPos.Column = 1
+						} else {
+							startPos.Column++
+						}
+						startPos.Byte++
+						curr++
+					}
+
+					if curr < fileLength && file.Bytes[curr] == ',' {
+						endPos := startPos
+						endPos.Column++
+						endPos.Byte++
+
+						if err := runner.EmitIssueWithFix(
+							r,
+							message,
+							item.ValueExpr.Range(),
+							func(f tflint.Fixer) error {
+								return f.Remove(hcl.Range{
+									Filename: filename,
+									Start:    startPos,
+									End:      endPos,
+								})
+							},
+						); err != nil {
+							return hcl.Diagnostics{
+								{
+									Severity: hcl.DiagError,
+									Summary:  "failed to call EmitIssueWithFix()",
+									Detail:   err.Error(),
+								},
+							}
+						}
+					}
+				}
+			}
+
+			return nil
+		})
 	}))
 
 	if diags.HasErrors() {

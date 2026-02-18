@@ -44,82 +44,69 @@ func (r *TerraformListsTrailingCommaRule) Check(runner tflint.Runner) error {
 	}
 
 	diags := runner.WalkExpressions(tflint.ExprWalkFunc(func(e hcl.Expression) hcl.Diagnostics {
-		filename := e.Range().Filename
+		return checkExpression(e, files, func(file *hcl.File) hcl.Diagnostics {
+			fileLength := len(file.Bytes)
 
-		if !isFileInCurrentModule(filename) {
-			return nil
-		}
+			list, ok := e.(*hclsyntax.TupleConsExpr)
+			if !ok || len(list.Exprs) == 0 {
+				return nil
+			}
 
-		if _, ok := files[filename]; !ok {
-			return nil
-		}
+			listRange := list.Range()
+			lastItem := list.Exprs[len(list.Exprs)-1]
+			lastItemRange := lastItem.Range()
 
-		file := files[filename]
-		fileLength := len(file.Bytes)
+			if listRange.Start.Line == lastItemRange.Start.Line {
+				return nil
+			}
 
-		if fileLength == 0 {
-			return nil
-		}
+			// Check if there's already a trailing comma after the last item
+			// We need to skip whitespace and newlines to handle heredoc cases
+			commaPos := lastItemRange.End.Byte
 
-		list, ok := e.(*hclsyntax.TupleConsExpr)
-		if !ok || len(list.Exprs) == 0 {
-			return nil
-		}
+			// Skip whitespace and newlines after the last item to look for a comma
+			for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
+				commaPos++
+			}
 
-		listRange := list.Range()
-		lastItem := list.Exprs[len(list.Exprs)-1]
-		lastItemRange := lastItem.Range()
+			if commaPos < fileLength && file.Bytes[commaPos] == ',' {
+				// It already has a trailling comma
+				return nil
+			}
 
-		if listRange.Start.Line == lastItemRange.Start.Line {
-			return nil
-		}
-
-		// Check if there's already a trailing comma after the last item
-		// We need to skip whitespace and newlines to handle heredoc cases
-		commaPos := lastItemRange.End.Byte
-
-		// Skip whitespace and newlines after the last item to look for a comma
-		for commaPos < fileLength && isWhitespace(file.Bytes[commaPos]) {
-			commaPos++
-		}
-
-		if commaPos < fileLength && file.Bytes[commaPos] == ',' {
-			// It already has a trailling comma
-			return nil
-		}
-
-		insertText := ","
-		// Check if the last item is a heredoc.
-		// A heredoc is a TemplateExpr with a single LiteralValueExpr part.
-		if template, ok := lastItem.(*hclsyntax.TemplateExpr); ok {
-			if len(template.Parts) == 1 {
-				if _, isLiteral := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLiteral {
-					// This is a strong indicator of a heredoc, especially if it spans multiple lines.
-					if template.Range().Start.Line != template.Range().End.Line {
-						insertText = "\n,"
+			insertText := ","
+			// Check if the last item is a heredoc.
+			// A heredoc is a TemplateExpr with a single LiteralValueExpr part.
+			if template, ok := lastItem.(*hclsyntax.TemplateExpr); ok {
+				if len(template.Parts) == 1 {
+					if _, isLiteral := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLiteral {
+						// This is a strong indicator of a heredoc, especially if it spans multiple lines.
+						if template.Range().Start.Line != template.Range().End.Line {
+							insertText = "\n,"
+						}
 					}
 				}
 			}
-		}
 
-		if err := runner.EmitIssueWithFix(
-			r,
-			"Last item in lists should always end with a trailing comma",
-			listRange,
-			func(f tflint.Fixer) error {
-				return f.InsertTextAfter(lastItemRange, insertText)
-			},
-		); err != nil {
-			return hcl.Diagnostics{
-				{
-					Severity: hcl.DiagError,
-					Summary:  "failed to call EmitIssueWithFix()",
-					Detail:   err.Error(),
+			if err := runner.EmitIssueWithFix(
+				r,
+				"Last item in lists should always end with a trailing comma",
+				listRange,
+				func(f tflint.Fixer) error {
+					return f.InsertTextAfter(lastItemRange, insertText)
 				},
+			); err != nil {
+				return hcl.Diagnostics{
+					{
+						Severity: hcl.DiagError,
+						Summary:  "failed to call EmitIssueWithFix()",
+						Detail:   err.Error(),
+					},
+				}
 			}
-		}
 
-		return nil
+			return nil
+		})
 	}))
 
 	if diags.HasErrors() {
