@@ -3,7 +3,9 @@ version: 2
 env:
   - CGO_ENABLED=0
 builds:
-  - targets:
+  - ldflags:
+      - -s -w -X main.version={{.Version}}
+    targets:
       - darwin_amd64
       - darwin_arm64
       - linux_386
@@ -24,9 +26,18 @@ archives:
     files:
       - none*
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
   extra_files:
     - glob: ./dist/raw/*
 signs:
   - artifacts: checksum
-    args: ["--batch", "-u", "{{ .Env.GPG_FINGERPRINT }}", "--output", "${signature}", "--detach-sign", "${artifact}"]
+    args:
+      [
+        "--batch",
+        "-u",
+        "{{ .Env.GPG_FINGERPRINT }}",
+        "--output",
+        "${signature}",
+        "--detach-sign",
+        "${artifact}",
+      ]
