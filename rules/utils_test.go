@@ -18,6 +18,9 @@ func TestIsWhitespace(t *testing.T) {
 		{'a', false},
 		{'1', false},
 		{'.', false},
+		{'-', false},
+		{0, false},
+		{',', false},
 	}
 
 	for _, test := range tests {
